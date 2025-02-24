@@ -1,0 +1,136 @@
+import java.sql.*;
+import java.util.Scanner;
+
+public class ProductCRUD {
+    private static final String URL = "jdbc:mysql://localhost:3306/your_database";
+    private static final String USER = "your_username";
+    private static final String PASSWORD = "your_password";
+
+    public static void main(String[] args) {
+        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD)) {
+            Scanner scanner = new Scanner(System.in);
+            boolean exit = false;
+
+            while (!exit) {
+                System.out.println("\nMenu:");
+                System.out.println("1. Create Product");
+                System.out.println("2. Read Products");
+                System.out.println("3. Update Product");
+                System.out.println("4. Delete Product");
+                System.out.println("5. Exit");
+                System.out.print("Choose an option: ");
+                int choice = scanner.nextInt();
+                scanner.nextLine();
+
+                switch (choice) {
+                    case 1:
+                        createProduct(connection, scanner);
+                        break;
+                    case 2:
+                        readProducts(connection);
+                        break;
+                    case 3:
+                        updateProduct(connection, scanner);
+                        break;
+                    case 4:
+                        deleteProduct(connection, scanner);
+                        break;
+                    case 5:
+                        exit = true;
+                        break;
+                    default:
+                        System.out.println("Invalid option. Try again.");
+                }
+            }
+            scanner.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void createProduct(Connection connection, Scanner scanner) throws SQLException {
+        System.out.print("Enter Product Name: ");
+        String name = scanner.nextLine();
+        System.out.print("Enter Price: ");
+        double price = scanner.nextDouble();
+        System.out.print("Enter Quantity: ");
+        int quantity = scanner.nextInt();
+        scanner.nextLine();
+
+        String sql = "INSERT INTO Product (ProductName, Price, Quantity) VALUES (?, ?, ?)";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            connection.setAutoCommit(false);
+            statement.setString(1, name);
+            statement.setDouble(2, price);
+            statement.setInt(3, quantity);
+            statement.executeUpdate();
+            connection.commit();
+            System.out.println("Product added successfully.");
+        } catch (SQLException e) {
+            connection.rollback();
+            e.printStackTrace();
+        }
+    }
+
+    private static void readProducts(Connection connection) throws SQLException {
+        String sql = "SELECT * FROM Product";
+        try (Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(sql)) {
+            System.out.println("ProductID | ProductName | Price | Quantity");
+            System.out.println("-------------------------------------------");
+            while (resultSet.next()) {
+                int id = resultSet.getInt("ProductID");
+                String name = resultSet.getString("ProductName");
+                double price = resultSet.getDouble("Price");
+                int quantity = resultSet.getInt("Quantity");
+                System.out.println(id + " | " + name + " | " + price + " | " + quantity);
+            }
+        }
+    }
+
+    private static void updateProduct(Connection connection, Scanner scanner) throws SQLException {
+        System.out.print("Enter Product ID to update: ");
+        int id = scanner.nextInt();
+        scanner.nextLine();
+        System.out.print("Enter new Product Name: ");
+        String name = scanner.nextLine();
+        System.out.print("Enter new Price: ");
+        double price = scanner.nextDouble();
+        System.out.print("Enter new Quantity: ");
+        int quantity = scanner.nextInt();
+        scanner.nextLine();
+
+        String sql = "UPDATE Product SET ProductName = ?, Price = ?, Quantity = ? WHERE ProductID = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            connection.setAutoCommit(false);
+            statement.setString(1, name);
+            statement.setDouble(2, price);
+            statement.setInt(3, quantity);
+            statement.setInt(4, id);
+            statement.executeUpdate();
+            connection.commit();
+            System.out.println("Product updated successfully.");
+        } catch (SQLException e) {
+            connection.rollback();
+            e.printStackTrace();
+        }
+    }
+
+    private static void deleteProduct(Connection connection, Scanner scanner) throws SQLException {
+        System.out.print("Enter Product ID to delete: ");
+        int id = scanner.nextInt();
+        scanner.nextLine();
+
+        String sql = "DELETE FROM Product WHERE ProductID = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            connection.setAutoCommit(false);
+            statement.setInt(1, id);
+            statement.executeUpdate();
+            connection.commit();
+            System.out.println("Product deleted successfully.");
+        } catch (SQLException e) {
+            connection.rollback();
+            e.printStackTrace();
+        }
+    }
+}
