@@ -1,0 +1,136 @@
+import java.sql.*;
+import java.util.Scanner;
+
+// Model: Student class
+class Student {
+    private int studentID;
+    private String name;
+    private String department;
+    private float marks;
+
+    public Student(int studentID, String name, String department, float marks) {
+        this.studentID = studentID;
+        this.name = name;
+        this.department = department;
+        this.marks = marks;
+    }
+
+    public int getStudentID() { return studentID; }
+    public String getName() { return name; }
+    public String getDepartment() { return department; }
+    public float getMarks() { return marks; }
+}
+
+// Controller: Handles database operations
+class StudentController {
+    private Connection conn;
+
+    public StudentController() {
+        try {
+            conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/StudentDB", "root", "password");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void addStudent(Student student) {
+        try {
+            String query = "INSERT INTO Students (Name, Department, Marks) VALUES (?, ?, ?)";
+            PreparedStatement stmt = conn.prepareStatement(query);
+            stmt.setString(1, student.getName());
+            stmt.setString(2, student.getDepartment());
+            stmt.setFloat(3, student.getMarks());
+            stmt.executeUpdate();
+            System.out.println("Student added successfully.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void viewStudents() {
+        try {
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT * FROM Students");
+            while (rs.next()) {
+                System.out.println(rs.getInt("StudentID") + " | " + rs.getString("Name") + " | " + rs.getString("Department") + " | " + rs.getFloat("Marks"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void updateStudent(int id, float newMarks) {
+        try {
+            String query = "UPDATE Students SET Marks = ? WHERE StudentID = ?";
+            PreparedStatement stmt = conn.prepareStatement(query);
+            stmt.setFloat(1, newMarks);
+            stmt.setInt(2, id);
+            stmt.executeUpdate();
+            System.out.println("Student updated successfully.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void deleteStudent(int id) {
+        try {
+            String query = "DELETE FROM Students WHERE StudentID = ?";
+            PreparedStatement stmt = conn.prepareStatement(query);
+            stmt.setInt(1, id);
+            stmt.executeUpdate();
+            System.out.println("Student deleted successfully.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+// View: Menu-driven user interaction
+public class StudentApp {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        StudentController controller = new StudentController();
+
+        while (true) {
+            System.out.println("1. Add Student");
+            System.out.println("2. View Students");
+            System.out.println("3. Update Student");
+            System.out.println("4. Delete Student");
+            System.out.println("5. Exit");
+            System.out.print("Enter choice: ");
+            int choice = scanner.nextInt();
+            
+            switch (choice) {
+                case 1:
+                    System.out.print("Enter Name: ");
+                    String name = scanner.next();
+                    System.out.print("Enter Department: ");
+                    String dept = scanner.next();
+                    System.out.print("Enter Marks: ");
+                    float marks = scanner.nextFloat();
+                    controller.addStudent(new Student(0, name, dept, marks));
+                    break;
+                case 2:
+                    controller.viewStudents();
+                    break;
+                case 3:
+                    System.out.print("Enter Student ID to update: ");
+                    int id = scanner.nextInt();
+                    System.out.print("Enter new Marks: ");
+                    float newMarks = scanner.nextFloat();
+                    controller.updateStudent(id, newMarks);
+                    break;
+                case 4:
+                    System.out.print("Enter Student ID to delete: ");
+                    int deleteID = scanner.nextInt();
+                    controller.deleteStudent(deleteID);
+                    break;
+                case 5:
+                    System.out.println("Exiting...");
+                    return;
+                default:
+                    System.out.println("Invalid choice.");
+            }
+        }
+    }
+}
